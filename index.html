@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAB Auto — Post Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --red:#E8272A; --red-deep:#C41E21; --bg:#0a0c10; --card:#10141a; --input-bg:#161b24; --border:rgba(232,39,42,0.18); --border-h:rgba(232,39,42,0.45); --fg:#eef2f7; --muted:#7a8899; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(232,39,42,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+  header{position:relative;z-index:10;text-align:center;padding:36px 20px 24px;border-bottom:1px solid var(--border);}
+  .eyebrow{font-size:14px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:8px;opacity:0.8;}
+  header h1{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,5vw,42px);font-weight:300;letter-spacing:2px;}
+  header h1 span{color:var(--red);font-weight:600;}
+  .page{display:none;position:relative;z-index:5;} .page.active{display:block;}
+  .fc{max-width:660px;margin:36px auto;padding:0 20px 80px;}
+  .slabel{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin:28px 0 16px;display:flex;align-items:center;gap:12px;}
+  .slabel::after{content:'';flex:1;height:1px;background:var(--border);}
+  .upload-zone{border:1.5px dashed var(--border-h);border-radius:14px;background:var(--card);padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;overflow:hidden;touch-action:manipulation;position:relative;}
+  .upload-zone:hover{border-color:var(--red);background:var(--input-bg);box-shadow:0 0 24px rgba(232,39,42,.12);}
+  .upload-zone.has-image{padding:0;border-style:solid;border-color:var(--red);}
+  .upload-zone.has-image img{width:100%;height:220px;object-fit:cover;border-radius:12px;display:block;}
+  .upload-zone .change-hint{display:none;position:absolute;inset:0;background:rgba(0,0,0,.45);border-radius:12px;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:1px;color:#fff;text-transform:uppercase;}
+  .upload-zone.has-image:hover .change-hint{display:flex;}
+  .upload-icon{font-size:34px;margin-bottom:10px;opacity:.45;}
+  .upload-text{font-size:14px;color:var(--muted);font-weight:300;}
+  .upload-text strong{color:var(--red);font-weight:500;}
+  #fileInput,#logoFileInput{display:none;}
+  .grid{display:grid;gap:13px;margin-bottom:13px;}
+  .g1{grid-template-columns:1fr;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:500;}
+  .field input,.field select{background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--fg);outline:none;transition:all .25s;appearance:none;-webkit-appearance:none;cursor:pointer;}
+  .field input:focus,.field select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(232,39,42,.12);}
+  .sw{position:relative;}
+  .sw::after{content:'▾';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--red);pointer-events:none;font-size:12px;}
+  .btn-gen{width:100%;margin-top:26px;padding:16px;background:linear-gradient(135deg,var(--red-deep),var(--red));border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#fff;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px rgba(232,39,42,.3);touch-action:manipulation;}
+  .btn-gen:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(232,39,42,.45);}
+  .pc{max-width:820px;margin:36px auto;padding:0 20px 80px;}
+  .pactions{display:flex;gap:12px;margin-bottom:26px;align-items:center;flex-wrap:wrap;}
+  .btn-back{background:transparent;border:1.5px solid var(--border-h);border-radius:10px;padding:10px 18px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .25s;touch-action:manipulation;}
+  .btn-back:hover{border-color:var(--red);color:var(--red);}
+  .btn-dl{background:linear-gradient(135deg,var(--red-deep),var(--red));border:none;border-radius:10px;padding:10px 24px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#fff;cursor:pointer;transition:all .3s;box-shadow:0 4px 12px rgba(232,39,42,.3);touch-action:manipulation;}
+  .btn-dl:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,39,42,.45);}
+  .btn-dl:disabled{opacity:.5;pointer-events:none;}
+  .sizes{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;}
+  .sbtn{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;touch-action:manipulation;}
+  .sbtn.active,.sbtn:hover{border-color:var(--red);color:var(--red);background:var(--input-bg);}
+  .cwrap{display:flex;justify-content:center;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden;}
+  #postCanvas{border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:100%;height:auto;display:block;}
+  .canvas-loading{display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(10,12,16,.7);border-radius:18px;font-size:13px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+  .cwrap-outer{position:relative;}
+  .cwrap-outer .canvas-loading.show{display:flex;}
+  .logo-zone{border:1.5px dashed var(--border-h);border-radius:10px;background:var(--card);padding:14px 16px;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:12px;touch-action:manipulation;}
+  .logo-zone:hover{border-color:var(--red);}
+  .logo-zone.has-logo{border-style:solid;border-color:var(--red);}
+  .logo-preview{width:44px;height:44px;object-fit:contain;border-radius:6px;display:none;}
+  .logo-zone.has-logo .logo-preview{display:block;}
+  .logo-zone-text{font-size:13px;color:var(--muted);}
+  .logo-zone.has-logo .logo-zone-text{color:var(--fg);}
+  @media(max-width:580px){.g2,.g3{grid-template-columns:1fr 1fr;}.g1{grid-template-columns:1fr;}.sizes{margin-left:0;width:100%;}.cwrap{padding:12px;}}
+  @media(max-width:360px){.g2,.g3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<input type="file" id="fileInput" accept="image/*">
+<input type="file" id="logoFileInput" accept="image/*">
+
+<header>
+  <div class="eyebrow">Marketing App</div>
+  <h1>Tripathi &amp; Brothers <span>Automobiles</span></h1>
+</header>
+
+<div class="page active" id="page1">
+  <div class="fc">
+    <div class="slabel">Car Photo</div>
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text"><strong>Tap to upload</strong> car photo<br>JPG · PNG · WEBP</div>
+      <div class="change-hint">🔄 Change Photo</div>
+    </div>
+    <div class="slabel">Company Logo</div>
+    <div class="logo-zone" id="logoZone">
+      <img class="logo-preview" id="logoPreview" src="" alt="logo">
+      <div class="logo-zone-text" id="logoZoneText">📎 Upload your logo (PNG transparent bg recommended)</div>
+    </div>
+    <div class="slabel">Car Details</div>
+    <div class="grid g1"><div class="field"><label>Car Name &amp; Model</label><input type="text" id="carName"></div></div>
+    <div class="grid g3">
+      <div class="field"><label>Transmission</label><div class="sw"><select id="transmission"><option value="Manual">Manual</option><option value="Automatic">Automatic</option></select></div></div>
+      <div class="field"><label>Drive</label><div class="sw"><select id="drive"><option value="2WD">2WD</option><option value="4WD">4WD</option><option value="AWD">AWD</option></select></div></div>
+      <div class="field"><label>Body Type</label><div class="sw"><select id="bodyType"><option value="SUV">SUV</option><option value="Hatchback">Hatchback</option><option value="Crossover">Crossover</option><option value="Sedan">Sedan</option><option value="MPV">MPV</option><option value="Pickup">Pickup</option></select></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="field"><label>Fuel Type</label><div class="sw"><select id="fuel"><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="Electric">Electric</option><option value="Hybrid">Hybrid</option></select></div></div>
+      <div class="field"><label>Color</label><input type="text" id="color"></div>
+    </div>
+    <div class="grid g2">
+      <div class="field"><label>KM Run</label><input type="text" id="km" inputmode="numeric"></div>
+      <div class="field"><label>Make Year</label><input type="text" id="year" inputmode="numeric"></div>
+    </div>
+    <div class="slabel">Pricing &amp; Contact</div>
+    <div class="grid g1">
+      <div class="field"><label>Price (Rs.)</label><input type="text" id="price" inputmode="numeric"></div>
+    </div>
+    <div class="grid g1">
+      <div class="field"><label>Phone Number</label><input type="tel" id="phone" inputmode="tel"></div>
+    </div>
+    <button class="btn-gen" onclick="generatePost()">Generate Post →</button>
+  </div>
+</div>
+
+<div class="page" id="page2">
+  <div class="pc">
+    <div class="pactions">
+      <button class="btn-back" onclick="goBack()">← Edit</button>
+      <button class="btn-dl" id="btnDl" onclick="downloadPost()">⬇ Download HD</button>
+      <div class="sizes">
+        <button class="sbtn active" onclick="setSize('square',this)">1:1</button>
+        <button class="sbtn" onclick="setSize('portrait',this)">4:5</button>
+        <button class="sbtn" onclick="setSize('story',this)">9:16</button>
+      </div>
+    </div>
+    <div class="cwrap-outer">
+      <div class="cwrap"><canvas id="postCanvas"></canvas></div>
+      <div class="canvas-loading" id="canvasLoading">Rendering…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let uploadedImage = null;
+let uploadedLogo  = null;
+let currentSize   = 'square';
+let fontsReady    = false;
+let renderPending = false;
+
+const SIZES = { square:{w:1080,h:1080}, portrait:{w:1080,h:1350}, story:{w:1080,h:1920} };
+const TNR   = "'Times New Roman', Times, serif";
+
+document.fonts.ready.then(() => { fontsReady = true; });
+setTimeout(() => { fontsReady = true; }, 2500);
+
+// ── Uploads ──
+const fileInput  = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  loadImg(f, (img, src) => { uploadedImage=img; uploadZone.innerHTML='<img src="'+src+'" alt="preview"><div class="change-hint">🔄 Change Photo</div>'; uploadZone.classList.add('has-image'); });
+  fileInput.value = '';
+});
+uploadZone.addEventListener('dragover', e => e.preventDefault());
+uploadZone.addEventListener('drop', e => { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith('image/')) loadImg(f,(img,src)=>{uploadedImage=img;uploadZone.innerHTML='<img src="'+src+'" alt="preview"><div class="change-hint">🔄 Change Photo</div>';uploadZone.classList.add('has-image');}); });
+
+const logoFileInput = document.getElementById('logoFileInput');
+const logoZone      = document.getElementById('logoZone');
+logoZone.addEventListener('click', () => logoFileInput.click());
+logoFileInput.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  loadImg(f, (img, src) => { uploadedLogo=img; document.getElementById('logoPreview').src=src; logoZone.classList.add('has-logo'); document.getElementById('logoZoneText').textContent='✅ Logo loaded — click to change'; });
+  logoFileInput.value = '';
+});
+
+function loadImg(file, cb) {
+  const r = new FileReader();
+  r.onload = ev => { const img = new Image(); img.onload = () => cb(img, ev.target.result); img.src = ev.target.result; };
+  r.readAsDataURL(file);
+}
+
+function goBack() {
+  document.getElementById('page2').classList.remove('active');
+  document.getElementById('page1').classList.add('active');
+  currentSize = 'square';
+  document.querySelectorAll('.sbtn').forEach((b,i) => b.classList.toggle('active', i===0));
+}
+function setSize(size, btn) {
+  currentSize = size;
+  document.querySelectorAll('.sbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  scheduleRender();
+}
+function generatePost() {
+  if (!uploadedImage) { alert('Please upload a car photo first!'); return; }
+  if (!document.getElementById('carName').value.trim()) {
+    const el = document.getElementById('carName');
+    el.focus(); el.style.borderColor = '#E8272A';
+    setTimeout(() => el.style.borderColor='',2000); return;
+  }
+  document.getElementById('page1').classList.remove('active');
+  document.getElementById('page2').classList.add('active');
+  scheduleRender();
+}
+function scheduleRender() {
+  if (renderPending) return;
+  renderPending = true;
+  document.getElementById('canvasLoading').classList.add('show');
+  document.getElementById('btnDl').disabled = true;
+  const exec = () => {
+    if (!renderPending) return;
+    renderPending = false;
+    requestAnimationFrame(() => { drawCanvas(); document.getElementById('canvasLoading').classList.remove('show'); document.getElementById('btnDl').disabled=false; });
+  };
+  if (fontsReady) setTimeout(exec, 60);
+  else { document.fonts.ready.then(() => setTimeout(exec,60)); setTimeout(exec, 2600); }
+}
+
+function getData() {
+  const v = id => document.getElementById(id).value.trim();
+  return { carName:v('carName')||'Car Name', transmission:v('transmission')||'Manual', drive:v('drive')||'2WD', bodyType:v('bodyType')||'SUV', fuel:v('fuel')||'Petrol', color:v('color')||'N/A', km:v('km')||'0', year:v('year')||String(new Date().getFullYear()), price:v('price')||'0', phone:v('phone')||'', lotNo:'' };
+}
+function fmtKM(k) { const n=parseInt((k+'').replace(/[^0-9]/g,'')); return isNaN(n)?'0 KM':n.toLocaleString('en-IN')+' KM'; }
+function fmtPrice(p) { const c=(p+'').replace(/[^0-9]/g,''); return c&&c!=='0'?'Rs. '+parseInt(c).toLocaleString('en-IN'):'Rs. 0'; }
+
+function rrect(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); }
+
+function drawIcon(ctx,type,icx,icy,sz){
+  ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=Math.max(1.5,sz*0.1);
+  const ix=icx-sz/2, iy=icy-sz/2;
+  switch(type){
+    case 'fuel':
+      ctx.strokeStyle='#F97316'; ctx.fillStyle='#F97316';
+      ctx.beginPath(); ctx.rect(ix+sz*.18,iy+sz*.12,sz*.42,sz*.76); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ix+sz*.6,iy+sz*.28); ctx.lineTo(ix+sz*.82,iy+sz*.18); ctx.lineTo(ix+sz*.82,iy+sz*.52); ctx.lineTo(ix+sz*.68,iy+sz*.62); ctx.stroke();
+      ctx.fillStyle='#FED7AA'; ctx.beginPath(); ctx.rect(ix+sz*.22,iy+sz*.3,sz*.34,sz*.2); ctx.fill(); break;
+    case 'km':
+      ctx.strokeStyle='#3B82F6'; ctx.fillStyle='#3B82F6';
+      ctx.beginPath(); ctx.arc(icx,icy,sz*.38,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(icx,icy); ctx.lineTo(icx+sz*.28,icy-sz*.18); ctx.stroke();
+      ctx.beginPath(); ctx.arc(icx,icy,sz*.06,0,Math.PI*2); ctx.fill(); break;
+    case 'year':
+      ctx.strokeStyle='#22C55E'; ctx.fillStyle='#22C55E';
+      rrect(ctx,ix+sz*.08,iy+sz*.18,sz*.84,sz*.72,sz*.08); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ix+sz*.08,iy+sz*.4); ctx.lineTo(ix+sz*.92,iy+sz*.4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ix+sz*.3,iy+sz*.08); ctx.lineTo(ix+sz*.3,iy+sz*.32); ctx.moveTo(ix+sz*.7,iy+sz*.08); ctx.lineTo(ix+sz*.7,iy+sz*.32); ctx.stroke();
+      ctx.fillStyle='#16A34A'; [[.25,.58],[.5,.58],[.75,.58],[.25,.75],[.5,.75]].forEach(([dx,dy])=>{ ctx.beginPath(); ctx.arc(ix+sz*dx,iy+sz*dy,sz*.045,0,Math.PI*2); ctx.fill(); }); break;
+    case 'body':
+      ctx.strokeStyle='#8B5CF6'; ctx.fillStyle='#8B5CF6';
+      ctx.beginPath(); ctx.moveTo(ix+sz*.04,iy+sz*.62); ctx.lineTo(ix+sz*.18,iy+sz*.38); ctx.lineTo(ix+sz*.36,iy+sz*.22); ctx.lineTo(ix+sz*.64,iy+sz*.22); ctx.lineTo(ix+sz*.82,iy+sz*.38); ctx.lineTo(ix+sz*.96,iy+sz*.62); ctx.closePath(); ctx.stroke();
+      ctx.fillStyle='#C4B5FD'; ctx.beginPath(); ctx.arc(ix+sz*.25,iy+sz*.65,sz*.1,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(ix+sz*.75,iy+sz*.65,sz*.1,0,Math.PI*2); ctx.fill(); break;
+    case 'color':
+      ctx.strokeStyle='#EC4899'; ctx.fillStyle='#FBCFE8';
+      ctx.beginPath(); ctx.moveTo(icx,iy+sz*.05); ctx.bezierCurveTo(icx+sz*.4,iy+sz*.35,icx+sz*.4,iy+sz*.65,icx,iy+sz*.88); ctx.bezierCurveTo(icx-sz*.4,iy+sz*.65,icx-sz*.4,iy+sz*.35,icx,iy+sz*.05); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+    case 'trans':
+      ctx.strokeStyle='#14B8A6'; ctx.fillStyle='#14B8A6';
+      ctx.beginPath(); ctx.arc(icx,icy,sz*.28,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(icx,icy,sz*.1,0,Math.PI*2); ctx.fill();
+      for(let ti=0;ti<6;ti++){ const ta=ti*Math.PI/3; ctx.beginPath(); ctx.moveTo(icx+Math.cos(ta)*sz*.28,icy+Math.sin(ta)*sz*.28); ctx.lineTo(icx+Math.cos(ta)*sz*.46,icy+Math.sin(ta)*sz*.46); ctx.stroke(); } break;
+  }
+  ctx.restore();
+}
+
+function drawCanvas() {
+  const canvas = document.getElementById('postCanvas');
+  const ctx    = canvas.getContext('2d');
+  const { w, h } = SIZES[currentSize];
+  canvas.width = w; canvas.height = h;
+
+ 
+  const wrapper = document.querySelector('.cwrap');
+  const wrapW = Math.max(wrapper.clientWidth || wrapper.offsetWidth || 360, 100);
+  const dispW = Math.min(wrapW - 56, 500);
+  canvas.style.width  = Math.round(dispW) + 'px';
+  canvas.style.height = Math.round(dispW * h / w) + 'px';
+
+  const d   = getData();
+  const PAD = Math.round(w * 0.055);
+  const gridW = w - PAD * 2;
+
+  const imgRatios = { square:0.45, portrait:0.43, story:0.40 };
+  const imgH = Math.round(h * imgRatios[currentSize]);
+
+
+  const isStory = currentSize === 'story';
+  const baseNameFS  = Math.round(w * 0.052);
+  const baseSubFS   = Math.round(w * 0.026);
+  const basePriceFS = Math.round(w * 0.054);
+  const baseRowH    = Math.round(w * 0.080); 
+  const baseDivH    = Math.round(w * 0.006); 
+
+  const baseBrandBandH = isStory ? Math.round(w * 0.095) : 0;
+  const baseContactLabelH = isStory ? Math.round(w * 0.040) : 0;
+  const baseFooterH = Math.round(w * 0.130); // phone + logo row
+
+ 
+  ctx.font = 'bold ' + baseNameFS + 'px ' + TNR;
+  let nfs = baseNameFS;
+  while (ctx.measureText(d.carName).width > gridW - 10 && nfs > 14) { nfs -= 2; ctx.font = 'bold ' + nfs + 'px ' + TNR; }
+
+ 
+  const contentH_base =
+      Math.round(h * 0.022)          // gap after image
+    + nfs * 1.25                      // car name
+    + baseSubFS * 1.65                // subtitle
+    + basePriceFS * 1.4               // price
+    + baseDivH                        // divider1
+    + baseRowH * 2                    // spec grid (2 rows)
+    + baseDivH                        // divider2
+    + baseBrandBandH                  // "Tripathi and Brothers" (9:16 only)
+    + baseContactLabelH               // "Contact Us:" label (9:16 only)
+    + baseFooterH;                    // footer
+
+
+  const contentAvail = h - imgH;
+
+
+  const scale = Math.min(contentAvail / contentH_base, 1.6);
+
+ 
+  const nameFS   = Math.round(nfs * scale);
+  const subFS    = Math.round(baseSubFS * scale);
+  const priceFS  = Math.round(basePriceFS * scale);
+  const rowH     = Math.round(baseRowH * scale);
+  const divH     = Math.round(baseDivH * scale);
+  const brandBandH    = Math.round(baseBrandBandH * scale);
+  const contactLabelH = Math.round(baseContactLabelH * scale);
+  const footerH  = contentAvail
+    - Math.round(h * 0.022)
+    - nameFS * 1.25
+    - subFS * 1.65
+    - priceFS * 1.4
+    - divH * 2
+    - rowH * 2
+    - brandBandH
+    - contactLabelH; 
+
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,w,imgH); ctx.clip();
+  const iAR = uploadedImage.width / uploadedImage.height;
+  const sAR = w / imgH;
+  let isx,isy,isw,ish;
+  if (iAR > sAR) { ish=uploadedImage.height; isw=ish*sAR; isx=(uploadedImage.width-isw)/2; isy=0; }
+  else           { isw=uploadedImage.width;  ish=isw/sAR; isx=0; isy=(uploadedImage.height-ish)/2; }
+  ctx.drawImage(uploadedImage, isx, isy, isw, ish, 0, 0, w, imgH);
+  
+  const shadowGrad = ctx.createLinearGradient(0, imgH*0.75, 0, imgH);
+  shadowGrad.addColorStop(0,'rgba(0,0,0,0)'); shadowGrad.addColorStop(1,'rgba(0,0,0,0.18)');
+  ctx.fillStyle = shadowGrad; ctx.fillRect(0, imgH*0.75, w, imgH*0.25);
+  ctx.restore();
+
+  let cur = imgH + Math.round(h * 0.022);
+
+  
+  ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillStyle='#111111';
+  ctx.font = 'bold ' + nameFS + 'px ' + TNR;
+ 
+  let nfsScaled = nameFS;
+  while (ctx.measureText(d.carName).width > gridW - 10 && nfsScaled > 16) { nfsScaled -= 2; ctx.font = 'bold ' + nfsScaled + 'px ' + TNR; }
+  ctx.fillText(d.carName, PAD, cur);
+  cur += nfsScaled * 1.25;
+
+  // ── SUBTITLE ──
+  ctx.font = subFS + 'px ' + TNR;
+  ctx.fillStyle = '#E8272A';
+  const lotPart = d.lotNo ? ' Lot no: ' + d.lotNo : '';
+  ctx.save();
+  ctx.beginPath(); ctx.rect(PAD, cur, gridW, subFS*1.6); ctx.clip();
+  ctx.fillText(d.transmission+' '+d.drive+'/ '+d.bodyType+'/'+lotPart, PAD, cur);
+  ctx.restore();
+  cur += subFS * 1.65;
+
+  // ── PRICE ──
+  ctx.font = 'bold ' + priceFS + 'px ' + TNR;
+  ctx.fillStyle = '#111111'; ctx.textBaseline = 'top';
+  ctx.fillText(fmtPrice(d.price), PAD, cur);
+  cur += priceFS * 1.4;
+
+
+  ctx.fillStyle='#e4e8ed'; ctx.fillRect(PAD, cur, gridW, Math.max(1, Math.round(divH*0.4)));
+  cur += divH;
+
+
+  const specs = [
+    {icon:'fuel', label:d.fuel},
+    {icon:'km',   label:fmtKM(d.km)},
+    {icon:'year', label:d.year},
+    {icon:'body', label:d.bodyType},
+    {icon:'color',label:d.color},
+    {icon:'trans',label:d.transmission+' '+d.drive},
+  ];
+  const colW   = gridW / 3;
+  const gap    = Math.round(colW * 0.025);
+  const pW     = colW - gap * 2;
+  const pH     = rowH - Math.round(rowH * 0.14);
+
+  const iconSz = Math.round(Math.min(pH * 0.42, pW * 0.22));
+  const specFS = Math.round(Math.min(pH * 0.30, pW * 0.18));
+
+  for (let si=0; si<6; si++) {
+    const col=si%3, row=Math.floor(si/3);
+    const pX = PAD + col*colW + gap;
+    const pY = cur + row*rowH + Math.round(rowH*0.07);
+
+    
+    ctx.fillStyle='#f2f5f8'; rrect(ctx,pX,pY,pW,pH,Math.round(pH*0.22)); ctx.fill();
+
+   
+    const icPad = Math.round(pW * 0.10);
+    const icX = pX + icPad + iconSz/2;
+    const icY = pY + pH/2;
+    drawIcon(ctx, specs[si].icon, icX, icY, iconSz);
+
+   
+    const lblX    = icX + iconSz/2 + Math.round(iconSz*0.18);
+    const lblMaxW = (pX + pW) - lblX - Math.round(pW*0.04);
+    if (lblMaxW > 4) {
+      let fs = specFS;
+      ctx.font = fs+'px '+TNR;
+      while (fs > 10 && ctx.measureText(specs[si].label).width > lblMaxW) {
+        fs -= 1; ctx.font = fs+'px '+TNR;
+      }
+      ctx.save();
+      ctx.beginPath(); ctx.rect(lblX, pY+2, lblMaxW, pH-4); ctx.clip();
+      ctx.fillStyle='#333333';
+      ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(specs[si].label, lblX, icY);
+      ctx.restore();
+    }
+  }
+
+  cur += rowH * 2 + divH * 0.4;
+
+  ctx.fillStyle='#e4e8ed'; ctx.fillRect(PAD, cur, gridW, Math.max(1, Math.round(divH*0.4)));
+  cur += divH;
+
+  if (isStory && brandBandH > 0) {
+
+    ctx.fillStyle = '#f0f4f8';
+    ctx.fillRect(0, cur, w, brandBandH);
+
+  
+    const brandFS = Math.round(brandBandH * 0.44);
+    ctx.font = 'bold ' + brandFS + 'px ' + TNR;
+  
+    let bfs = brandFS;
+    while (bfs > 16 && ctx.measureText('Tripathi and Brothers').width > gridW * 0.88) {
+      bfs -= 2; ctx.font = 'bold ' + bfs + 'px ' + TNR;
+    }
+    ctx.fillStyle = '#5BAADC';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Tripathi and Brothers', w / 2, cur + brandBandH / 2);
+    cur += brandBandH;
+  }
+
+  if (isStory && contactLabelH > 0) {
+    const clFS = Math.round(contactLabelH * 0.68);
+    ctx.font = clFS + 'px ' + TNR;
+    ctx.fillStyle = '#E8272A';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Contact Us:', PAD, cur + contactLabelH / 2);
+    cur += contactLabelH;
+  }
+
+
+  const footerMid   = cur + footerH / 2;
+  const logoZoneW   = Math.round(gridW * 0.36);
+  const phoneZoneW  = gridW - logoZoneW;
+
+
+  const phoneFSRatio = isStory ? 0.32 : (currentSize === 'portrait' ? 0.38 : 0.52);
+  let phoneFS = Math.round(footerH * phoneFSRatio);
+  const piSz  = Math.round(phoneFS * 0.72);
+
+ 
+  ctx.font = 'bold ' + phoneFS + 'px ' + TNR;
+  const phoneNumX = PAD + piSz + Math.round(piSz*0.28);
+  while (phoneFS > 14 && ctx.measureText(d.phone).width > phoneZoneW - piSz - Math.round(piSz*0.5)) {
+    phoneFS -= 2;
+    ctx.font = 'bold ' + phoneFS + 'px ' + TNR;
+  }
+  const piSzF = Math.round(phoneFS * 0.72);
+
+  // Phone icon 
+  ctx.strokeStyle='#222'; ctx.fillStyle='#222';
+  ctx.lineWidth=Math.max(1.5, piSzF*0.09); ctx.lineCap='round';
+  const phX = PAD + piSzF*0.05;
+  const phY = footerMid - piSzF*0.5;
+  rrect(ctx, phX, phY, piSzF*0.8, piSzF, piSzF*0.17);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(phX+piSzF*0.4, phY+piSzF*0.15, piSzF*0.065, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(phX+piSzF*0.4, phY+piSzF*0.85, piSzF*0.065, 0, Math.PI*2); ctx.fill();
+
+  // Phone number 
+  const phnX = PAD + piSzF + Math.round(piSzF*0.28);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(PAD, cur, phoneZoneW, footerH); ctx.clip();
+  ctx.font='bold '+phoneFS+'px '+TNR; ctx.fillStyle='#111'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(d.phone, phnX, footerMid);
+  ctx.restore();
+
+  // Logo
+  if (uploadedLogo) {
+    const logoMaxH = Math.round(footerH * (isStory ? 0.68 : 0.90));
+    const logoMaxW = logoZoneW - Math.round(PAD * (isStory ? 0.7 : 0.4));
+    const lAR = uploadedLogo.width / uploadedLogo.height;
+    let lw, lh;
+    if (lAR > logoMaxW/logoMaxH) { lw=logoMaxW; lh=Math.round(lw/lAR); }
+    else                          { lh=logoMaxH; lw=Math.round(lh*lAR); }
+    ctx.drawImage(uploadedLogo, w-PAD-lw, footerMid-lh/2, lw, lh);
+  }
+}
+
+function downloadPost() {
+  const canvas = document.getElementById('postCanvas');
+  canvas.toBlob(blob => {
+    if (!blob) { alert('Export failed. Please try again.'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='TAB_'+(document.getElementById('carName').value.trim().replace(/\s+/g,'_')||'Post').substring(0,40)+'_'+currentSize+'.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  },'image/png',1.0);
+}
+</script>
+</body>
+</html>
