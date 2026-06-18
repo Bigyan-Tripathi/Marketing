@@ -32,7 +32,7 @@
   .upload-text{font-size:14px;color:var(--muted);font-weight:400;}
   .upload-text strong{color:var(--blue-bright);font-weight:600;}
   .hint{font-size:11px;color:var(--muted);margin-top:5px;opacity:.7;}
-  #fileInput,#logoFileInput{display:none;}
+  #fileInput{display:none;}
 
   .thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
   .thumb{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:2px solid var(--border);background:var(--card);}
@@ -45,7 +45,7 @@
   .logo-zone.has-logo{border-style:solid;border-color:var(--blue-bright);}
   .logo-preview{width:44px;height:44px;object-fit:contain;border-radius:6px;display:none;background:#fff;padding:3px;}
   .logo-zone.has-logo .logo-preview{display:block;}
-  .logo-zone-text{font-size:13px;color:var(--muted);font-weight:400;}
+  .logo-zone-text{font-size:13px;color:var(--muted);font-weight:400;} 
 
   .grid{display:grid;gap:13px;margin-bottom:13px;}
   .g1{grid-template-columns:1fr;} .g2{grid-template-columns:1fr 1fr;}
@@ -90,7 +90,6 @@
 <body>
 
 <input type="file" id="fileInput" accept="image/*" multiple>
-<input type="file" id="logoFileInput" accept="image/*">
 
 <header>
   <div class="eyebrow">Marketing App</div>
@@ -107,26 +106,21 @@
     </div>
     <div class="thumbs" id="thumbs"></div>
 
-    <div class="slabel">Company Logo</div>
-    <div class="logo-zone" id="logoZone">
-      <img class="logo-preview" id="logoPreview" src="" alt="logo">
-      <div class="logo-zone-text" id="logoZoneText">📎 Upload your logo (PNG with transparent background recommended)</div>
-    </div>
 
     <div class="slabel">Car Details</div>
     <div class="grid g1">
       <div class="field"><label>Car Title &amp; Model</label>
-        <input type="text" id="carTitle" placeholder="e.g. Mahindra Scorpio S11 Fully Loaded 2020"></div>
+        <input type="text" id="carTitle"></div>
     </div>
     <div class="grid g1">
       <div class="field"><label>Price</label>
-        <input type="text" id="price" inputmode="numeric" placeholder="e.g. 5400000" oninput="livePrice(this)" onblur="livePrice(this)"></div>
+        <input type="text" id="price" inputmode="numeric" oninput="livePrice(this)" onblur="livePrice(this)"></div>
     </div>
 
     <div class="slabel">Highlights <span style="color:var(--muted);letter-spacing:1px;">· optional · shown as chips on the photo</span></div>
     <div class="grid g2">
       <div class="field"><label>KM Run <span class="opt">· optional</span></label>
-        <input type="text" id="km" inputmode="numeric" placeholder="e.g. 18000"></div>
+        <input type="text" id="km" inputmode="numeric"></div>
       <div class="field"><label>Fuel Type <span class="opt">· optional</span></label>
         <select id="fuel">
           <option value="">— none —</option>
@@ -169,7 +163,9 @@
 </div>
 
 <script>
-/* made by bigyan */
+
+const EMBEDDED_LOGO = "logo.png";
+
 const BANNER   = 'BUY, SALE & EXCHANGE';
 const BANNER_TAG = 'BUY, SALE & EXCHANGE';
 const PRICE_SUB= 'Negotiable Price';
@@ -210,15 +206,15 @@ function renderThumbs(){
 }
 function removeImg(i){ uploadedImages.splice(i,1); renderThumbs(); }
 
-const logoFileInput = document.getElementById('logoFileInput');
-const logoZone = document.getElementById('logoZone');
-logoZone.addEventListener('click', ()=> logoFileInput.click());
-logoFileInput.addEventListener('change', e=>{
-  const f = e.target.files[0]; if(!f) return;
-  loadImg(f,(img,src)=>{ uploadedLogo=img; document.getElementById('logoPreview').src=src;
-    logoZone.classList.add('has-logo'); document.getElementById('logoZoneText').textContent='✅ Logo loaded — tap to change'; });
-  logoFileInput.value='';
-});
+
+function loadEmbeddedLogo(){
+  if(!EMBEDDED_LOGO) return;
+  const img = new Image();
+  img.onload  = ()=>{ uploadedLogo = img; };
+  img.onerror = ()=>{ console.warn('Embedded logo failed to load — check EMBEDDED_LOGO / that logo.png sits next to index.html.'); };
+  img.src = EMBEDDED_LOGO;
+}
+loadEmbeddedLogo();
 
 function loadImg(file, cb){
   const r = new FileReader();
@@ -359,7 +355,7 @@ function drawCanvas(image){
   const titleBottom = headerTop + headerH;
   const footerTop   = h - footerH;
   const photoTop    = titleBottom + Math.round(h*0.014);
-  const photoH      = footerTop - photoTop;
+  const photoH      = (h - Math.round(footerH*0.95)) - photoTop;  
 
   const bg = ctx.createLinearGradient(0,0,0,h);
   bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#eef2f8');
@@ -391,14 +387,10 @@ function drawCanvas(image){
   ctx.fillText(d.title, w/2, hY+headerH*0.40);
   ctx.letterSpacing='0px';
 
-  const accW=Math.round(w*0.085);
-  ctx.fillStyle='#9CC0FF';
-  ctx.fillRect(w/2-accW/2, hY+headerH*0.70, accW, Math.max(2,Math.round(h*0.0026)));
-
   const tagFS=Math.round(headerH*0.16);
   ctx.letterSpacing=Math.round(w*0.008)+'px';
-  ctx.font='500 '+tagFS+'px '+DISPLAY;
-  ctx.fillStyle='#2E6FD6';
+  ctx.font='700 '+tagFS+'px '+DISPLAY;
+  ctx.fillStyle='#1F5FCC';
   ctx.fillText(BANNER_TAG, w/2, hY+headerH*0.86);
   ctx.letterSpacing='0px';
 
@@ -447,74 +439,136 @@ function drawCanvas(image){
     });
   }
 
-  const wedge=Math.round(footerH*0.42);
-  ctx.fillStyle='#eef2f8';
-  ctx.beginPath(); ctx.moveTo(0,footerTop); ctx.lineTo(w*0.46,footerTop);
-  ctx.lineTo(0,footerTop-wedge); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#1357C8';
-  ctx.beginPath(); ctx.moveTo(0,footerTop); ctx.lineTo(w*0.40,footerTop);
-  ctx.lineTo(0,footerTop-wedge*0.62); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#e6ebf3'; ctx.fillRect(w*0.46,footerTop,w-w*0.46,Math.max(1,Math.round(h*0.0015)));
+ 
+  const fHx   = Math.round(footerH * 0.95);    
+  const fTop  = h - fHx;                      
+  const topF  = fTop + Math.round(fHx * 0.075); 
+  const apexX = w * 0.555;                       
+  const apexY = topF + (h - topF) * 0.34;        
+  const Lt = w * 0.45;                           
+  const Rt = w * 0.59;                           
 
-  const fMid=footerTop+footerH/2;
-  const logoZoneW=Math.round((w-PAD*2)*0.34);
-  const textZoneW=(w-PAD*2)-logoZoneW;
+  ctx.fillStyle = '#1357C8';
+  ctx.fillRect(0, fTop, w, fHx);
 
-  const lines=[ {ic:'phone', t:d.phones}, {ic:'pin', t:LOCATION}, {ic:'web', t:WEBSITE} ];
-  const lineH=Math.round(footerH*0.74/3);
-  const icSz=Math.round(lineH*0.66);
-  const txtFS=Math.round(lineH*0.50);
-  const startY=fMid-lineH*1.5+lineH/2;
-  lines.forEach((ln,i)=>{
-    const ly=startY+i*lineH;
-    footerIcon(ctx,ln.ic,PAD+icSz/2,ly,icSz,'#1357C8');
-    const tx=PAD+icSz+Math.round(icSz*0.45);
-    const fs=fitFont(ctx,ln.t,textZoneW-(icSz+Math.round(icSz*0.45)),txtFS,'600',12);
-    ctx.font='600 '+fs+'px '+FONT; ctx.fillStyle='#1a2436';
-    ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText(ln.t, tx, ly+1);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, topF, w, h - topF);
+
+  
+  ctx.fillStyle = '#1357C8';
+  ctx.beginPath();
+  ctx.moveTo(Lt, topF);
+  ctx.quadraticCurveTo(apexX, topF, apexX, apexY);   
+  ctx.quadraticCurveTo(apexX, topF, Rt, topF);      
+  ctx.closePath();
+  ctx.fill();
+
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 16, 55, 0.32)';
+  ctx.shadowBlur = Math.round(w * 0.008);
+  ctx.shadowOffsetX = -Math.round(w * 0.005);
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(Rt, topF);
+  ctx.quadraticCurveTo(apexX, topF, apexX, apexY);                                   
+  ctx.quadraticCurveTo(apexX, apexY + (h - apexY) * 0.5, apexX + w * 0.012, h);      
+  ctx.lineTo(w, h);                                                                 
+  ctx.lineTo(w, topF);                                                             
+  ctx.closePath();                                                                  
+  ctx.fill();
+  ctx.restore();
+
+  const fMid = (topF + h) / 2;
+  const leftMaxX = Math.round(w * 0.46);
+  const lines = [ {ic:'phone', t:d.phones}, {ic:'pin', t:LOCATION}, {ic:'web', t:WEBSITE} ];
+  const lineH = Math.round((h - topF) * 0.62 / 3);
+  const icSz = Math.round(lineH * 0.60);
+  const txtFS = Math.round(lineH * 0.64);
+  const startY = fMid - lineH;
+  lines.forEach((ln, i) => {
+    const ly = startY + (i * lineH);
+    footerIcon(ctx, ln.ic, PAD + icSz / 2, ly, icSz, '#1357C8');
+    const tx = PAD + icSz + Math.round(icSz * 0.5);
+    const fs = fitFont(ctx, ln.t, leftMaxX - tx, txtFS, '600', 11, DISPLAY);
+    ctx.font = '600 ' + fs + 'px ' + DISPLAY;
+    ctx.fillStyle = '#1a2436';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ln.t, tx, ly + 1);
   });
 
-  if(uploadedLogo){
-    const maxH=Math.round(footerH*0.78), maxW=logoZoneW-Math.round(PAD*0.3);
-    const lAR=uploadedLogo.width/uploadedLogo.height; let lw,lh;
-    if(lAR>maxW/maxH){ lw=maxW; lh=Math.round(lw/lAR); } else { lh=maxH; lw=Math.round(lh*lAR); }
-    ctx.drawImage(uploadedLogo, w-PAD-lw, fMid-lh/2, lw, lh);
+  if (uploadedLogo) {
+    const lx0 = Math.round(w * 0.625);
+    const lmaxW = (w - Math.round(w * 0.03)) - lx0;
+    const lmaxH = Math.round((h - topF) * 0.64);
+    const lAR = uploadedLogo.width / uploadedLogo.height;
+    let lw, lh;
+    if (lAR > lmaxW / lmaxH) { lw = lmaxW; lh = Math.round(lw / lAR); }
+    else { lh = lmaxH; lw = Math.round(lh * lAR); }
+    ctx.drawImage(uploadedLogo, lx0 + (lmaxW - lw) / 2, fMid - lh / 2, lw, lh);
   }
 }
 
 function safeName(){
   return (document.getElementById('carTitle').value.trim().replace(/\s+/g,'_')||'Post').substring(0,40);
 }
-function exportCanvas(suffix){
+
+function canvasToBlob(){
   return new Promise(res=>{
-    document.getElementById('postCanvas').toBlob(blob=>{
-      if(!blob){ res(); return; }
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url; a.download='Tripathi_'+safeName()+suffix+'_'+currentSize+'.png';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url),1500);
-      res();
-    },'image/png',1.0);
+    document.getElementById('postCanvas').toBlob(b=>res(b),'image/png',1.0);
   });
 }
-function downloadCurrent(){
+function fallbackDownload(blob, filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function saveBlob(blob, filename){
+  if(!blob) return;
+  const file = new File([blob], filename, {type:'image/png'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file]}); return; }
+    catch(err){ if(err && err.name==='AbortError') return; }
+  }
+  fallbackDownload(blob, filename);
+}
+async function downloadCurrent(){
   const suffix = uploadedImages.length>1 ? '_'+(currentIndex+1) : '';
-  exportCanvas(suffix);
+  const blob = await canvasToBlob();
+  await saveBlob(blob, 'Tripathi_'+safeName()+suffix+'_'+currentSize+'.png');
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function downloadAll(){
   const btn=document.getElementById('btnDlAll');
   btn.disabled=true; const orig=btn.textContent;
+
+  const files=[];
   for(let i=0;i<uploadedImages.length;i++){
-    btn.textContent='Saving '+(i+1)+'/'+uploadedImages.length+'…';
+    btn.textContent='Preparing '+(i+1)+'/'+uploadedImages.length+'…';
     drawCanvas(uploadedImages[i].img);
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    await exportCanvas(uploadedImages.length>1 ? '_'+(i+1) : '');
-    await sleep(550);
+    const blob=await canvasToBlob();
+    if(blob) files.push(new File([blob],
+      'Tripathi_'+safeName()+(uploadedImages.length>1?'_'+(i+1):'')+'_'+currentSize+'.png',
+      {type:'image/png'}));
   }
   drawCanvas(uploadedImages[currentIndex].img);
+
+
+  if(files.length && navigator.canShare && navigator.canShare({files})){
+    try{ await navigator.share({files}); btn.textContent=orig; btn.disabled=false; return; }
+    catch(err){ if(err && err.name==='AbortError'){ btn.textContent=orig; btn.disabled=false; return; } }
+  }
+
+  for(let i=0;i<files.length;i++){
+    btn.textContent='Saving '+(i+1)+'/'+files.length+'…';
+    fallbackDownload(files[i], files[i].name);
+    await sleep(550);
+  }
   btn.textContent=orig; btn.disabled=false;
 }
 </script>
